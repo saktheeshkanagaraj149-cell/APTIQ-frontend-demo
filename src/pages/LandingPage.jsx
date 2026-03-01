@@ -186,6 +186,59 @@ export default function LandingPage() {
                 </div>
             </section>
 
+            {/* Contributors Section */}
+            <section id="contributors" className="py-20 bg-cream relative">
+                <div className="absolute inset-0 bg-ruled-lines opacity-10" aria-hidden="true" />
+                <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div className="text-center mb-16">
+                        <h2 className="font-caveat text-4xl sm:text-5xl font-bold text-navy mb-4">
+                            Meet the Team 👨‍💻
+                        </h2>
+                        <p className="text-lg text-navy/60 max-w-xl mx-auto">
+                            The amazing people building AptIQ for students across India.
+                        </p>
+                    </div>
+
+                    {/* Founder / Team Lead — featured card */}
+                    <div className="max-w-md mx-auto mb-10">
+                        <div className="bg-yellow-light p-6 rounded-xl shadow-sticky text-center hover:shadow-hover hover:-translate-y-1 transition-all duration-300 border-2 border-yellow-accent/30">
+                            <div className="w-16 h-16 bg-yellow-accent rounded-full flex items-center justify-center mx-auto mb-3 text-2xl shadow-md">
+                                ⭐
+                            </div>
+                            <h3 className="font-caveat text-2xl font-bold text-navy">Saktheesh K</h3>
+                            <p className="text-navy/80 text-sm font-semibold mt-1">Founder & Team Lead</p>
+                            <p className="text-navy/50 text-xs mt-1">🎓 P.S.R Engineering College</p>
+                        </div>
+                    </div>
+
+                    {/* Team members grid */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+                        {[
+                            { name: 'Narasimha', role: 'Backend Developer', college: 'Siddharth Institute of Engineering & Technology, Puttur', emoji: '🔧', color: 'bg-sky-soft', rotate: '-rotate-1' },
+                            { name: 'Mohamed Mubarak S A J', role: 'Designer & Data Analyst', college: 'IFET College of Engineering, Villupuram, TN', emoji: '🎨', color: 'bg-pink-light', rotate: 'rotate-1' },
+                            { name: 'Mohan Kumar', role: 'Full Stack Developer', college: 'P.S.R.R Engineering College', emoji: '💻', color: 'bg-green-soft', rotate: '-rotate-1' },
+                            { name: 'Nalini Saravanan', role: 'Software Developer', college: 'Govt Arts & Science College, Thennagur', emoji: '👩‍💻', color: 'bg-yellow-light', rotate: 'rotate-1' },
+                            { name: 'Mohamed Faaris K M', role: 'System Design Engineer', college: 'KRCE Trichy', emoji: '⚙️', color: 'bg-sky-soft', rotate: 'rotate-1' },
+                            { name: 'Sadhana Shree', role: 'Frontend Developer', college: 'P.S.R.R College of Engineering', emoji: '🖥️', color: 'bg-pink-light', rotate: '-rotate-1' },
+                            { name: 'Sweety', role: 'Marketing, Management & Operations Strategy', college: '', emoji: '📊', color: 'bg-green-soft', rotate: 'rotate-1' },
+                        ].map((member, index) => (
+                            <div
+                                key={member.name}
+                                className={`${member.color} p-5 rounded-lg shadow-sticky ${member.rotate} hover:rotate-0 hover:-translate-y-2 hover:shadow-hover transition-all duration-300 cursor-default animate-fade-in`}
+                                style={{ animationDelay: `${index * 100}ms` }}
+                            >
+                                <div className="text-2xl mb-2">{member.emoji}</div>
+                                <h3 className="font-caveat text-xl font-bold text-navy">{member.name}</h3>
+                                <p className="text-navy/70 text-sm mt-1">{member.role}</p>
+                                {member.college && (
+                                    <p className="text-navy/40 text-xs mt-2">🎓 {member.college}</p>
+                                )}
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </section>
+
             {/* Footer */}
             <footer className="bg-navy py-10">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
