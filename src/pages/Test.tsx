@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { TestContainer } from '../components/test/TestContainer';
 import { QuestionCard } from '../components/test/QuestionCard';
@@ -6,14 +6,18 @@ import { TimerBar } from '../components/test/TimerBar';
 import { NavigationButtons } from '../components/test/NavigationButtons';
 import { questions, testMeta } from '../data/questions';
 
+const MAX_VIOLATIONS = 3;
+
 /**
  * Test – Full-screen test page composing reusable test components.
  * Owns state and logic; child components remain pure and stateless.
  *
- * Side-effects:
- *   - Timer interval (countdown)
- *   - visibilitychange listener (tab-switch detection)
- *   - contextmenu listener (right-click prevention)
+ * Anti-cheat features:
+ *   - Fullscreen mode enforcement (enters fullscreen on start)
+ *   - Tab-switch / visibility change detection (max 3 violations → auto-submit)
+ *   - Fullscreen exit detection (counts as a violation)
+ *   - Right-click prevention
+ *   - Text selection disabled
  */
 export default function Test() {
     const navigate = useNavigate();
@@ -23,8 +27,12 @@ export default function Test() {
     const [isStarted, setIsStarted] = useState(false);
     const [isSubmitted, setIsSubmitted] = useState(false);
     const [showWarning, setShowWarning] = useState(false);
+    const [warningMessage, setWarningMessage] = useState('');
     const [tabSwitchCount, setTabSwitchCount] = useState(0);
     const [markedForReview, setMarkedForReview] = useState<Set<string>>(new Set());
+    const [isFullscreen, setIsFullscreen] = useState(false);
+    const [showFullscreenPrompt, setShowFullscreenPrompt] = useState(false);
+    const testContainerRef = useRef<HTMLDivElement>(null);
 
     const question = questions[currentQuestion];
     const totalTime = testMeta.duration * 60;
@@ -46,25 +54,126 @@ export default function Test() {
         return () => clearInterval(interval);
     }, [isStarted, isSubmitted]);
 
+    /* ── Fullscreen helpers ── */
+    const enterFullscreen = useCallback(async () => {
+        try {
+            const el = document.documentElement;
+            if (el.requestFullscreen) {
+                await el.requestFullscreen();
+            } else if ((el as any).webkitRequestFullscreen) {
+                await (el as any).webkitRequestFullscreen();
+            } else if ((el as any).msRequestFullscreen) {
+                await (el as any).msRequestFullscreen();
+            }
+            setIsFullscreen(true);
+            setShowFullscreenPrompt(false);
+        } catch {
+            console.warn('Fullscreen request denied by browser.');
+        }
+    }, []);
+
+    const exitFullscreen = useCallback(() => {
+        try {
+            if (document.exitFullscreen) {
+                document.exitFullscreen();
+            } else if ((document as any).webkitExitFullscreen) {
+                (document as any).webkitExitFullscreen();
+            } else if ((document as any).msExitFullscreen) {
+                (document as any).msExitFullscreen();
+            }
+        } catch {
+            // ignore
+        }
+        setIsFullscreen(false);
+    }, []);
+
+    /* ── Trigger violation ── */
+    const triggerViolation = useCallback((message: string) => {
+        if (isSubmitted) return;
+        setTabSwitchCount((prev) => {
+            const newCount = prev + 1;
+            if (newCount >= MAX_VIOLATIONS) {
+                setWarningMessage(`⛔ Maximum violations reached (${MAX_VIOLATIONS}). Test auto-submitted.`);
+                setShowWarning(true);
+                setIsSubmitted(true);
+                exitFullscreen();
+            } else {
+                setWarningMessage(`${message} (${newCount}/${MAX_VIOLATIONS})`);
+                setShowWarning(true);
+                setTimeout(() => setShowWarning(false), 3000);
+            }
+            return newCount;
+        });
+    }, [isSubmitted, exitFullscreen]);
+
+    /* ── Tab switch / visibility detection ── */
     const handleVisibilityChange = useCallback(() => {
         if (document.hidden && isStarted && !isSubmitted) {
-            setTabSwitchCount((prev) => prev + 1);
-            setShowWarning(true);
-            setTimeout(() => setShowWarning(false), 3000);
+            triggerViolation('🚨 Tab switch detected!');
         }
-    }, [isStarted, isSubmitted]);
+    }, [isStarted, isSubmitted, triggerViolation]);
 
     useEffect(() => {
         document.addEventListener('visibilitychange', handleVisibilityChange);
         return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
     }, [handleVisibilityChange]);
 
+    /* ── Fullscreen exit detection ── */
+    useEffect(() => {
+        if (!isStarted || isSubmitted) return;
+        const handleFullscreenChange = () => {
+            const isFull = !!(
+                document.fullscreenElement ||
+                (document as any).webkitFullscreenElement ||
+                (document as any).msFullscreenElement
+            );
+            setIsFullscreen(isFull);
+            if (!isFull && isStarted && !isSubmitted) {
+                // User exited fullscreen — show prompt to re-enter
+                setShowFullscreenPrompt(true);
+                triggerViolation('🖥️ Fullscreen exit detected!');
+            }
+        };
+        document.addEventListener('fullscreenchange', handleFullscreenChange);
+        document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+        return () => {
+            document.removeEventListener('fullscreenchange', handleFullscreenChange);
+            document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
+        };
+    }, [isStarted, isSubmitted, triggerViolation]);
+
+    /* ── Right-click prevention ── */
     useEffect(() => {
         if (!isStarted || isSubmitted) return;
         const h = (e: Event) => e.preventDefault();
         document.addEventListener('contextmenu', h);
         return () => document.removeEventListener('contextmenu', h);
     }, [isStarted, isSubmitted]);
+
+    /* ── Keyboard shortcut prevention (Alt+Tab warning, F11, etc.) ── */
+    useEffect(() => {
+        if (!isStarted || isSubmitted) return;
+        const handleKeyDown = (e: KeyboardEvent) => {
+            // Prevent common escape keys
+            if (e.key === 'F11' || e.key === 'Escape') {
+                e.preventDefault();
+            }
+            // Prevent Ctrl+Tab, Ctrl+W, Alt+Tab attempts
+            if ((e.ctrlKey && (e.key === 'Tab' || e.key === 'w' || e.key === 'W')) ||
+                (e.altKey && e.key === 'Tab')) {
+                e.preventDefault();
+            }
+        };
+        document.addEventListener('keydown', handleKeyDown);
+        return () => document.removeEventListener('keydown', handleKeyDown);
+    }, [isStarted, isSubmitted]);
+
+    /* ── Exit fullscreen on submit ── */
+    useEffect(() => {
+        if (isSubmitted && isFullscreen) {
+            exitFullscreen();
+        }
+    }, [isSubmitted, isFullscreen, exitFullscreen]);
 
     const selectAnswer = (i: number) => setAnswers({ ...answers, [question.id]: i });
     const toggleReview = () => {
@@ -74,8 +183,17 @@ export default function Test() {
             return next;
         });
     };
-    const handleSubmit = () => setIsSubmitted(true);
+    const handleSubmit = () => {
+        setIsSubmitted(true);
+        exitFullscreen();
+    };
     const getScore = () => questions.filter((q) => answers[q.id] === q.correctAnswer).length;
+
+    /* ── Start test: enter fullscreen ── */
+    const handleStartTest = async () => {
+        setIsStarted(true);
+        await enterFullscreen();
+    };
 
     // Pre-start screen
     if (!isStarted) {
@@ -94,17 +212,22 @@ export default function Test() {
                         </div>
                     </div>
                     <div className="bg-yellow-light/50 rounded-lg p-4 mb-6 text-left">
-                        <p className="font-body text-sm text-navy/70 mb-2">⚠️ Instructions:</p>
+                        <p className="font-body text-sm text-navy/70 mb-2">⚠️ Anti-Cheat Rules:</p>
                         <ul className="font-body text-sm text-navy/60 space-y-1 list-disc pl-4">
-                            <li>Do not switch tabs during the test</li>
-                            <li>Right-click is disabled</li>
-                            <li>Timer starts when you click &quot;Start&quot;</li>
+                            <li><strong>Fullscreen mode</strong> will be activated — do not exit</li>
+                            <li><strong>Tab switching</strong> is monitored and recorded</li>
+                            <li><strong>{MAX_VIOLATIONS} violations</strong> (tab switch or fullscreen exit) = auto-submit</li>
+                            <li>Right-click and keyboard shortcuts are disabled</li>
+                            <li>Timer starts when you click "Start"</li>
                             <li>You can mark questions for review</li>
                         </ul>
                     </div>
-                    <button onClick={() => setIsStarted(true)} className="px-8 py-3 bg-navy text-cream font-body text-lg rounded-lg shadow-md hover:bg-navy-light hover:shadow-lg transition-all">
-                        Start Test →
+                    <button onClick={handleStartTest} className="px-8 py-3 bg-navy text-cream font-body text-lg rounded-lg shadow-md hover:bg-navy-light hover:shadow-lg transition-all group">
+                        <span className="flex items-center gap-2">
+                            🖥️ Enter Fullscreen & Start Test →
+                        </span>
                     </button>
+                    <p className="font-body text-xs text-navy/40 mt-3">Your browser will enter fullscreen mode</p>
                 </div>
             </div>
         );
@@ -142,13 +265,50 @@ export default function Test() {
     // Active test
     const answeredCount = Object.keys(answers).length;
     return (
-        <TestContainer timeRemaining={timeLeft} questionNumber={currentQuestion + 1} totalQuestions={questions.length}>
+        <TestContainer timeRemaining={timeLeft} questionNumber={currentQuestion + 1} totalQuestions={questions.length} violationCount={tabSwitchCount} maxViolations={MAX_VIOLATIONS}>
+            {/* Violation warning overlay */}
             {showWarning && (
                 <div className="fixed inset-0 bg-red-500/90 z-50 flex items-center justify-center animate-fade-in select-none">
                     <div className="text-center">
                         <p className="text-white font-caveat text-5xl mb-4">⚠️</p>
-                        <p className="text-white font-body text-2xl">Tab switch detected!</p>
-                        <p className="text-white/80 font-body mt-2">Recorded ({tabSwitchCount} times)</p>
+                        <p className="text-white font-body text-2xl">{warningMessage}</p>
+                        <div className="flex gap-1 justify-center mt-4">
+                            {Array.from({ length: MAX_VIOLATIONS }).map((_, i) => (
+                                <div
+                                    key={i}
+                                    className={`w-4 h-4 rounded-full border-2 border-white/50 transition-all ${i < tabSwitchCount ? 'bg-white' : 'bg-transparent'
+                                        }`}
+                                />
+                            ))}
+                        </div>
+                        <p className="text-white/60 font-body text-sm mt-2">
+                            {tabSwitchCount >= MAX_VIOLATIONS
+                                ? 'Test has been auto-submitted'
+                                : `${MAX_VIOLATIONS - tabSwitchCount} violation(s) remaining`}
+                        </p>
+                    </div>
+                </div>
+            )}
+
+            {/* Fullscreen re-enter prompt */}
+            {showFullscreenPrompt && !isSubmitted && tabSwitchCount < MAX_VIOLATIONS && (
+                <div className="fixed inset-0 bg-navy/95 z-50 flex items-center justify-center animate-fade-in select-none">
+                    <div className="text-center bg-white rounded-xl p-8 shadow-xl max-w-md">
+                        <p className="font-caveat text-4xl mb-2">🖥️</p>
+                        <h3 className="font-caveat text-2xl font-bold text-navy mb-2">Fullscreen Required</h3>
+                        <p className="font-body text-navy/60 mb-4">
+                            You exited fullscreen mode. This has been recorded as a violation.
+                            Please re-enter fullscreen to continue.
+                        </p>
+                        <p className="font-body text-red-500 text-sm mb-4">
+                            ⚠️ Violations: {tabSwitchCount}/{MAX_VIOLATIONS}
+                        </p>
+                        <button
+                            onClick={enterFullscreen}
+                            className="px-6 py-3 bg-navy text-cream font-body rounded-lg shadow-md hover:bg-navy-light transition-all"
+                        >
+                            Re-enter Fullscreen →
+                        </button>
                     </div>
                 </div>
             )}

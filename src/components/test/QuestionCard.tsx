@@ -41,7 +41,7 @@ export function QuestionCard({
 }: QuestionCardProps) {
     return (
         <div
-            className={`bg-white rounded-xl shadow-card p-6 sm:p-8 bg-ruled-lines shadow-paper relative select-none ${className}`}
+            className={`bg-white rounded-xl shadow-card p-6 sm:p-8 bg-ruled-lines shadow-paper relative select-none font-body ${className}`}
         >
             {/* Red margin line */}
             <div
@@ -102,7 +102,7 @@ export function QuestionCard({
                                     >
                                         {String.fromCharCode(65 + index)}
                                     </span>
-                                    <span className="text-navy select-none">{option}</span>
+                                    <span className="text-navy select-none font-body">{option}</span>
                                 </span>
                             </button>
                         );

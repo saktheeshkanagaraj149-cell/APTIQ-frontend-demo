@@ -17,6 +17,8 @@ interface TestContainerProps {
     timeRemaining: number;
     questionNumber: number;
     totalQuestions: number;
+    violationCount?: number;
+    maxViolations?: number;
     className?: string;
 }
 
@@ -25,11 +27,13 @@ export function TestContainer({
     timeRemaining,
     questionNumber,
     totalQuestions,
+    violationCount = 0,
+    maxViolations = 3,
     className = '',
 }: TestContainerProps) {
     return (
         <div
-            className={`min-h-screen bg-cream select-none relative ${className}`}
+            className={`min-h-screen bg-cream select-none relative font-body ${className}`}
             onContextMenu={(e) => e.preventDefault()}
         >
             {/* Notebook ruled lines background */}
@@ -64,27 +68,48 @@ export function TestContainer({
                 </div>
 
                 {/* Time remaining (compact display) */}
-                <div className="flex items-center gap-2">
-                    <img
-                        src="https://unpkg.com/lucide-static@latest/icons/clock.svg"
-                        alt=""
-                        width="16"
-                        height="16"
-                        className="opacity-50"
-                        aria-hidden="true"
-                    />
-                    <span
-                        className={`font-caveat text-lg font-bold select-none ${timeRemaining < 60
-                            ? 'text-red-500 animate-pulse'
-                            : timeRemaining < 300
-                                ? 'text-yellow-600'
-                                : 'text-navy'
-                            }`}
-                        aria-label={`Time remaining: ${Math.floor(timeRemaining / 60)} minutes ${timeRemaining % 60} seconds`}
-                    >
-                        {String(Math.floor(timeRemaining / 60)).padStart(2, '0')}:
-                        {String(timeRemaining % 60).padStart(2, '0')}
-                    </span>
+                <div className="flex items-center gap-4">
+                    {/* Violation indicator */}
+                    {violationCount > 0 && (
+                        <div className="flex items-center gap-1.5 px-2 py-1 bg-red-50 rounded-lg border border-red-200">
+                            <span className="font-body text-xs text-red-500 select-none">⚠️</span>
+                            <div className="flex gap-0.5">
+                                {Array.from({ length: maxViolations }).map((_, i) => (
+                                    <div
+                                        key={i}
+                                        className={`w-2.5 h-2.5 rounded-full transition-all ${i < violationCount
+                                            ? 'bg-red-500'
+                                            : 'bg-red-200'
+                                            }`}
+                                    />
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Time remaining */}
+                    <div className="flex items-center gap-2">
+                        <img
+                            src="https://unpkg.com/lucide-static@latest/icons/clock.svg"
+                            alt=""
+                            width="16"
+                            height="16"
+                            className="opacity-50"
+                            aria-hidden="true"
+                        />
+                        <span
+                            className={`font-caveat text-lg font-bold select-none ${timeRemaining < 60
+                                ? 'text-red-500 animate-pulse'
+                                : timeRemaining < 300
+                                    ? 'text-yellow-600'
+                                    : 'text-navy'
+                                }`}
+                            aria-label={`Time remaining: ${Math.floor(timeRemaining / 60)} minutes ${timeRemaining % 60} seconds`}
+                        >
+                            {String(Math.floor(timeRemaining / 60)).padStart(2, '0')}:
+                            {String(timeRemaining % 60).padStart(2, '0')}
+                        </span>
+                    </div>
                 </div>
             </div>
 
