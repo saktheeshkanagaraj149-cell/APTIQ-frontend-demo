@@ -130,7 +130,7 @@ export default function TakeTest() {
                     </button>
 
                     {/* Question dots */}
-                    <div className="flex gap-1.5">
+                    <div className="flex flex-wrap gap-1.5 justify-center">
                         {test.questions.map((_, i) => (
                             <button key={i} onClick={() => setCurrentQ(i)}
                                 className={`w-3 h-3 rounded-full transition-all ${i === currentQ ? 'bg-navy scale-125' : answers[i] ? 'bg-green-soft border border-navy/20' : 'bg-ruled'}`} />

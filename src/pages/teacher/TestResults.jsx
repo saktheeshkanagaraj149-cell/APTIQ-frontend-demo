@@ -33,7 +33,7 @@ export default function TestResults() {
                 </div>
 
                 {/* Summary stats */}
-                <div className="grid grid-cols-3 gap-4 mb-6">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
                     {[
                         { label: 'Total Submissions', value: results.length, icon: '📩', color: 'bg-sky-soft/40' },
                         { label: 'Avg Score', value: `${avg}%`, icon: '📈', color: 'bg-yellow-light/60' },
@@ -67,38 +67,40 @@ export default function TestResults() {
                     </div>
                 ) : (
                     <div className="bg-white rounded-2xl shadow-card overflow-hidden animate-fade-in">
-                        <table className="w-full">
-                            <thead className="bg-navy/5 border-b border-ruled">
-                                <tr>
-                                    {['Student', 'Test', 'Score', 'Time', 'Date', 'Grade'].map(h => (
-                                        <th key={h} className="px-4 py-3 text-left font-body text-xs font-semibold text-navy/60 uppercase tracking-wide">{h}</th>
-                                    ))}
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-cream">
-                                {filtered.map((r, i) => (
-                                    <tr key={r.id} className="hover:bg-cream/50 transition-colors animate-fade-in" style={{ animationDelay: `${i * 30}ms` }}>
-                                        <td className="px-4 py-3">
-                                            <div className="flex items-center gap-2">
-                                                <div className="w-7 h-7 rounded-full bg-yellow-light flex items-center justify-center text-navy text-xs font-bold shrink-0">
-                                                    {r.studentName[0]?.toUpperCase()}
-                                                </div>
-                                                <span className="font-body text-sm text-navy font-medium">{r.studentName}</span>
-                                            </div>
-                                        </td>
-                                        <td className="px-4 py-3 font-body text-sm text-navy/70 max-w-[160px] truncate">{r.testTitle}</td>
-                                        <td className="px-4 py-3 font-body text-sm text-navy font-semibold">{r.score}/{r.total}</td>
-                                        <td className="px-4 py-3 font-body text-xs text-navy/50">{r.timeTaken || '—'}</td>
-                                        <td className="px-4 py-3 font-body text-xs text-navy/40">{new Date(r.submittedAt).toLocaleDateString()}</td>
-                                        <td className="px-4 py-3">
-                                            <span className={`px-2 py-1 rounded-full text-xs font-body font-bold ${r.percentage >= 70 ? 'bg-green-soft text-navy' : r.percentage >= 40 ? 'bg-yellow-light text-navy' : 'bg-pink-light text-navy'}`}>
-                                                {r.percentage}%
-                                            </span>
-                                        </td>
+                        <div className="overflow-x-auto">
+                            <table className="w-full">
+                                <thead className="bg-navy/5 border-b border-ruled">
+                                    <tr>
+                                        {['Student', 'Test', 'Score', 'Time', 'Date', 'Grade'].map(h => (
+                                            <th key={h} className="px-4 py-3 text-left font-body text-xs font-semibold text-navy/60 uppercase tracking-wide">{h}</th>
+                                        ))}
                                     </tr>
-                                ))}
-                            </tbody>
-                        </table>
+                                </thead>
+                                <tbody className="divide-y divide-cream">
+                                    {filtered.map((r, i) => (
+                                        <tr key={r.id} className="hover:bg-cream/50 transition-colors animate-fade-in" style={{ animationDelay: `${i * 30}ms` }}>
+                                            <td className="px-4 py-3">
+                                                <div className="flex items-center gap-2">
+                                                    <div className="w-7 h-7 rounded-full bg-yellow-light flex items-center justify-center text-navy text-xs font-bold shrink-0">
+                                                        {r.studentName[0]?.toUpperCase()}
+                                                    </div>
+                                                    <span className="font-body text-sm text-navy font-medium">{r.studentName}</span>
+                                                </div>
+                                            </td>
+                                            <td className="px-4 py-3 font-body text-sm text-navy/70 max-w-[160px] truncate">{r.testTitle}</td>
+                                            <td className="px-4 py-3 font-body text-sm text-navy font-semibold">{r.score}/{r.total}</td>
+                                            <td className="px-4 py-3 font-body text-xs text-navy/50">{r.timeTaken || '—'}</td>
+                                            <td className="px-4 py-3 font-body text-xs text-navy/40">{new Date(r.submittedAt).toLocaleDateString()}</td>
+                                            <td className="px-4 py-3">
+                                                <span className={`px-2 py-1 rounded-full text-xs font-body font-bold ${r.percentage >= 70 ? 'bg-green-soft text-navy' : r.percentage >= 40 ? 'bg-yellow-light text-navy' : 'bg-pink-light text-navy'}`}>
+                                                    {r.percentage}%
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
                         {filtered.length === 0 && (
                             <p className="text-center font-body text-navy/40 py-8 text-sm">No results match your search.</p>
                         )}

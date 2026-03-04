@@ -49,7 +49,7 @@ export default function AuthForm() {
                     {[...Array(5)].map((_, i) => <div key={i} className="w-4 h-4 rounded-full border-2 border-navy/20 bg-white" />)}
                 </div>
 
-                <div className="p-8 pl-16">
+                <div className="p-6 pl-10 sm:p-8 sm:pl-16">
                     <div className="text-center mb-8">
                         <Link to="/" className="inline-block">
                             <h1 className="font-caveat text-4xl font-bold text-navy">Apt<span className="text-yellow-accent">IQ</span></h1>

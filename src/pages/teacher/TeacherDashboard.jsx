@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { getClassesByTeacher, getTestsByTeacher, getResultsByTeacher, seedDemoData } from '../../data/classStore';
+import { getClassesByTeacher, getTestsByTeacher, getResultsByTeacher } from '../../data/classStore';
 
 function StatCard({ icon, label, value, color, delay }) {
     return (
@@ -25,7 +25,6 @@ export default function TeacherDashboard() {
     const [results, setResults] = useState([]);
 
     useEffect(() => {
-        seedDemoData();
         setClasses(getClassesByTeacher(user?.email));
         setTests(getTestsByTeacher(user?.email));
         setResults(getResultsByTeacher(user?.email));

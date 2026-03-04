@@ -85,19 +85,13 @@ export default function LandingPage() {
                             Master Quantitative, Logical, and Verbal skills — all in one place.
                         </p>
 
-                        {/* CTA Buttons */}
-                        <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+                        {/* CTA Button */}
+                        <div className="flex justify-center">
                             <Link
                                 to="/auth"
-                                className="px-8 py-4 bg-navy text-cream font-body text-xl rounded-xl shadow-lg hover:shadow-xl hover:bg-navy-light transform hover:-translate-y-0.5 transition-all duration-200 animate-pulse-glow"
+                                className="px-8 py-4 bg-navy text-cream font-body text-lg sm:text-xl rounded-xl shadow-lg hover:shadow-xl hover:bg-navy-light transform hover:-translate-y-0.5 transition-all duration-200 animate-pulse-glow"
                             >
                                 Get Started — It&apos;s Free! ✨
-                            </Link>
-                            <Link
-                                to="/dashboard"
-                                className="px-8 py-4 bg-cream text-navy font-body text-xl rounded-xl border-2 border-navy/20 hover:border-navy/40 shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-200"
-                            >
-                                Explore Demo →
                             </Link>
                         </div>
 

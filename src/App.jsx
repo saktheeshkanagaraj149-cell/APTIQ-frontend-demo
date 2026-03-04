@@ -1,14 +1,8 @@
+import { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation, Navigate } from 'react-router-dom';
 import Header from './components/Header';
-import Sidebar from './components/Sidebar';
 import LandingPage from './pages/LandingPage';
 import AuthForm from './pages/AuthForm';
-import Dashboard from './pages/Dashboard';
-import LearningPath from './pages/LearningPath';
-import Test from './pages/Test';
-import Leaderboard from './pages/Leaderboard';
-import Analytics from './pages/Analytics';
-import BadgeStreak from './pages/BadgeStreak';
 
 // Teacher pages
 import TeacherDashboard from './pages/teacher/TeacherDashboard';
@@ -25,34 +19,63 @@ import JoinClass from './pages/student/JoinClass';
 import TakeTest from './pages/student/TakeTest';
 import StudentSidebar from './components/student/StudentSidebar';
 
+// Student feature pages (shared)
+import LearningPath from './pages/LearningPath';
+import Test from './pages/Test';
+import Leaderboard from './pages/Leaderboard';
+import Analytics from './pages/Analytics';
+import BadgeStreak from './pages/BadgeStreak';
+
 import { useAuth } from './context/AuthContext';
-import { seedDemoData } from './data/classStore';
 
-// Seed demo data once
-seedDemoData();
+/** Mobile sidebar toggle button */
+function SidebarToggle({ onClick }) {
+  return (
+    <button
+      onClick={onClick}
+      className="md:hidden fixed bottom-6 left-6 z-30 w-12 h-12 bg-navy text-cream rounded-full shadow-lg hover:shadow-xl flex items-center justify-center transition-all duration-200 hover:scale-105 active:scale-95"
+      aria-label="Open navigation"
+      id="sidebar-toggle"
+    >
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <line x1="3" y1="6" x2="21" y2="6" />
+        <line x1="3" y1="12" x2="21" y2="12" />
+        <line x1="3" y1="18" x2="21" y2="18" />
+      </svg>
+    </button>
+  );
+}
 
-/** Teacher layout: navy sidebar + header */
+/** Teacher layout: responsive sidebar + header */
 function TeacherLayout({ children }) {
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   return (
     <div className="min-h-screen bg-cream">
       <Header />
       <div className="flex">
-        <TeacherSidebar />
-        <main className="flex-1 min-h-[calc(100vh-4rem)] overflow-y-auto">{children}</main>
+        <TeacherSidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+        <main className="flex-1 min-h-[calc(100vh-4rem)] overflow-y-auto w-full">
+          {children}
+        </main>
       </div>
+      <SidebarToggle onClick={() => setSidebarOpen(true)} />
     </div>
   );
 }
 
-/** Student layout: navy sidebar + header */
+/** Student layout: responsive sidebar + header */
 function StudentLayout({ children }) {
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   return (
     <div className="min-h-screen bg-cream">
       <Header />
       <div className="flex">
-        <StudentSidebar />
-        <main className="flex-1 min-h-[calc(100vh-4rem)] overflow-y-auto">{children}</main>
+        <StudentSidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+        <main className="flex-1 min-h-[calc(100vh-4rem)] overflow-y-auto w-full">
+          {children}
+        </main>
       </div>
+      <SidebarToggle onClick={() => setSidebarOpen(true)} />
     </div>
   );
 }
@@ -70,16 +93,12 @@ function AppLayout() {
   const { user } = useAuth();
   const isLanding = location.pathname === '/';
   const isAuth = location.pathname === '/auth';
-  const isTest = location.pathname === '/test';
   const isTeacher = location.pathname.startsWith('/teacher');
   const isStudentRoute = location.pathname.startsWith('/student');
-
-  if (isTest) return <Test />;
 
   if (isLanding) return <><Header /><LandingPage /></>;
 
   if (isAuth) {
-    // Redirect if already logged in
     if (user) return <Navigate to={user.role === 'teacher' ? '/teacher/dashboard' : '/student/dashboard'} />;
     return <><Header /><AuthForm /></>;
   }
@@ -105,13 +124,18 @@ function AppLayout() {
     return (
       <RequireRole role="student">
         <Routes>
-          {/* Full-screen test (no sidebar) */}
+          {/* Full-screen test pages (no sidebar) */}
           <Route path="/student/test/:testId" element={<TakeTest />} />
+          <Route path="/student/mock-test" element={<Test />} />
           <Route path="/student/*" element={
             <StudentLayout>
               <Routes>
                 <Route path="/dashboard" element={<StudentDashboard />} />
                 <Route path="/join-class" element={<JoinClass />} />
+                <Route path="/learn" element={<LearningPath />} />
+                <Route path="/leaderboard" element={<Leaderboard />} />
+                <Route path="/analytics" element={<Analytics />} />
+                <Route path="/badges" element={<BadgeStreak />} />
               </Routes>
             </StudentLayout>
           } />
@@ -120,24 +144,8 @@ function AppLayout() {
     );
   }
 
-  // Original student/general pages
-  return (
-    <div className="min-h-screen bg-cream">
-      <Header />
-      <div className="flex">
-        <Sidebar />
-        <main className="flex-1 min-h-[calc(100vh-4rem)] overflow-y-auto">
-          <Routes>
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/learn" element={<LearningPath />} />
-            <Route path="/leaderboard" element={<Leaderboard />} />
-            <Route path="/analytics" element={<Analytics />} />
-            <Route path="/badges" element={<BadgeStreak />} />
-          </Routes>
-        </main>
-      </div>
-    </div>
-  );
+  // Catch-all: redirect to auth
+  return <Navigate to="/auth" replace />;
 }
 
 export default function App() {
